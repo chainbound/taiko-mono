@@ -68,6 +68,7 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 	if c.PacayaClients.ForkHeight == 0 {
 		stateVars, err := c.GetProtocolStateVariablesPacaya(&bind.CallOpts{Context: ctxWithTimeout})
 		if err != nil {
+			log.Error(fmt.Sprintf("failed to fetch Pacaya protocol state variables: %w", err))
 			return err
 		}
 
@@ -75,6 +76,7 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 	} else {
 		slotA, _, err := c.GetProtocolStateVariablesOntake(&bind.CallOpts{Context: ctxWithTimeout})
 		if err != nil {
+			log.Error(fmt.Sprintf("failed to fetch Ontake protocol state variables: %w", err))
 			return err
 		}
 
@@ -84,6 +86,7 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 	// Fetch the node's genesis block.
 	nodeGenesis, err := c.L2.HeaderByNumber(ctxWithTimeout, common.Big0)
 	if err != nil {
+		log.Error(fmt.Sprintf("failed to fetch L2 genesis block: %w", err))
 		return err
 	}
 
@@ -98,6 +101,7 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 
 	protocolConfigs, err := c.GetProtocolConfigs(&bind.CallOpts{Context: ctxWithTimeout})
 	if err != nil {
+		log.Error(fmt.Sprintf("failed to fetch protocol configs: %w", err))
 		return err
 	}
 
@@ -106,36 +110,42 @@ func (c *Client) ensureGenesisMatched(ctx context.Context) error {
 		// Fetch the genesis `BatchesVerified` event.
 		iter, err := c.PacayaClients.TaikoInbox.FilterBatchesVerified(filterOpts)
 		if err != nil {
+			log.Error(fmt.Sprintf("failed to fetch TaikoInbox.BatchesVerified event: %w", err))
 			return err
 		}
 		if iter.Next() {
 			l2GenesisHash = iter.Event.BlockHash
 		}
 		if iter.Error() != nil {
+			log.Error(fmt.Sprintf("failed to fetch TaikoInbox.BatchesVerified event (iter error): %w", iter.Error()))
 			return iter.Error()
 		}
 	} else if protocolConfigs.ForkHeightsOntake() == 0 {
 		// Fetch the genesis `BlockVerifiedV2` event.
 		iter, err := c.OntakeClients.TaikoL1.FilterBlockVerifiedV2(filterOpts, []*big.Int{common.Big0}, nil)
 		if err != nil {
+			log.Error(fmt.Sprintf("failed to fetch TaikoL1.BlockVerifiedV2 event: %w", err))
 			return err
 		}
 		if iter.Next() {
 			l2GenesisHash = iter.Event.BlockHash
 		}
 		if iter.Error() != nil {
+			log.Error(fmt.Sprintf("failed to fetch TaikoL1.BlockVerifiedV2 event (iter error): %w", iter.Error()))
 			return iter.Error()
 		}
 	} else {
 		// Fetch the genesis `BlockVerified` event.
 		iter, err := c.OntakeClients.TaikoL1.FilterBlockVerified(filterOpts, []*big.Int{common.Big0}, nil)
 		if err != nil {
+			log.Error(fmt.Sprintf("failed to fetch TaikoL1.BlockVerified event: %w", err))
 			return err
 		}
 		if iter.Next() {
 			l2GenesisHash = iter.Event.BlockHash
 		}
 		if iter.Error() != nil {
+			log.Error(fmt.Sprintf("failed to fetch TaikoL1.BlockVerified event (iter error): %w", iter.Error()))
 			return iter.Error()
 		}
 	}

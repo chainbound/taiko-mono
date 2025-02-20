@@ -75,7 +75,11 @@ contract PreconfWhitelist is EssentialContract, IPreconfWhitelist {
             LibPreconfUtils.getEpochTimestamp() - LibPreconfConstants.SECONDS_IN_EPOCH;
         // Use the beacon block root at the first block of the last epoch as the
         // source of randomness
-        bytes32 randomness = LibPreconfUtils.getBeaconBlockRoot(timestampOfLastEpoch);
+        //bytes32 randomness = LibPreconfUtils.getBeaconBlockRoot(timestampOfLastEpoch);
+
+        // CHAINBOUND: use weak randomness for the devnet environment
+        bytes32 randomness = keccak256(abi.encodePacked(block.timestamp, block.difficulty));
+
         uint256 index = uint256(randomness) % _operatorCount;
         return operatorIndexToOperator[index];
     }
